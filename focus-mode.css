@@ -1,0 +1,19 @@
+#header {
+  display: none !important;
+}
+
+#contents-container {
+  display: none !important;
+}
+
+[role="navigation"] {
+  display: none !important;
+}
+
+.style-scope .ytd-masthead {
+  display: none !important;
+}
+
+.contents {
+  justify-content: center;
+}
