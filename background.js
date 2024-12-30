@@ -1,42 +1,31 @@
+chrome.runtime.onInstalled.addListener(() => {
+  console.log("YouTube Watch Later Scraper Extension Installed");
+});
+
+// Listen for the page load event when the user visits YouTube
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-  if (changeInfo.status === "complete" && tab.active) {
-    // Redirect to the Watch Later playlist if it's not already on it
-    const oldURL = tab.url;
-    if (
-      tab.url.includes("youtube.com") &&
-      !tab.url.includes("playlist?list=WL")
-    ) {
-      chrome.tabs.update(tabId, {
-        url: "https://www.youtube.com/playlist?list=WL",
-      });
-    } else {
-      // If already on the Watch Later playlist, run the scraping function
-      chrome.scripting.executeScript(
-        {
-          target: { tabId },
-          func: scrapeWatchLaterVideos,
-        },
-        (result) => {
-          if (chrome.runtime.lastError) {
-            console.error("Error executing script:", chrome.runtime.lastError);
-            return;
-          }
-
-          // Check the result and scrape videos
-          const videos = (result && result[0] && result[0].result) || [];
-          console.log(videos);
-
-          // Send scraped data (Watch Later videos) to content.js
-          chrome.tabs.sendMessage(tabId, {
-            action: "displayWatchLaterVideos",
-            videos,
-          });
-        }
-      );
-    }
-    chrome.tabs.update(tabId, {
-      url: oldURL,
-    });
+  console.log(tabId, changeInfo, tab.url);
+  if (
+    changeInfo.status === "complete" &&
+    tab.active &&
+    tab.url.includes("youtube")
+  ) {
+    console.log("Starting to execute script");
+    chrome.scripting.executeScript(
+      {
+        target: { tabId },
+        func: scrapeWatchLaterVideos,
+      },
+      (result) => {
+        console.log(result);
+        // Send scraped data (Watch Later videos) to content.js
+        const videos = result.length > 0 ? result[0].result : [];
+        chrome.tabs.sendMessage(tabId, {
+          action: "displayWatchLaterVideos",
+          videos,
+        });
+      }
+    );
   }
 });
 
@@ -66,6 +55,5 @@ function scrapeWatchLaterVideos() {
       });
     }
   });
-  console.log("VIDS", videos);
   return videos;
 }
