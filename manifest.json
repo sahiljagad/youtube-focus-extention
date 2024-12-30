@@ -21,6 +21,14 @@
     }
   },
   "permissions": ["scripting", "activeTab"],
+  "host_permissions": ["https://www.youtube.com/*"],
+  "content_scripts": [
+    {
+      "matches": ["https://www.youtube.com/*"],
+      "css": ["focus-mode.css"],
+      "js": ["content.js"]
+    }
+  ],
   "commands": {
     "_execute_action": {
       "suggested_key": {

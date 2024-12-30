@@ -1,19 +1,51 @@
+/* Hide the left navigation bar */
+#guide {
+  display: none !important;
+}
+
+/* Hide chips and arrows on top of videos */
 #header {
   display: none !important;
 }
 
-#contents-container {
-  display: none !important;
-}
-
+/* Hide left navigation bar */
 [role="navigation"] {
   display: none !important;
 }
 
-.style-scope .ytd-masthead {
+/* Hide the Shorts section on the homepage */
+ytd-rich-section-renderer[section-identifier="shorts-shelf"] {
   display: none !important;
 }
 
-.contents {
-  justify-content: center;
+/* Hide the Shorts carousel specifically */
+ytd-rich-shelf-renderer[is-shorts] {
+  display: none !important;
+}
+
+/* Hide the top navigation bar */
+#masthead-container {
+  display: none !important;
+}
+
+#secondary {
+  display: none !important;
+}
+
+/* Hide the right sidebar (recommended videos on the watch page) */
+ytd-watch-next-secondary-results-renderer {
+  display: none !important;
+}
+
+/* Adjust the main content to be centered */
+#page-manager {
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  padding-right: 3%; /* Add spacing from the right */
+}
+
+/* Make the main content area take a reasonable width */
+#primary {
+  width: 80%;
 }
