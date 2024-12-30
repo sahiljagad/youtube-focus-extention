@@ -1,65 +1,50 @@
-// youtube base link
-// const youtube = "https://www.youtube.com/";
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+  if (changeInfo.status === "complete" && tab.active) {
+    // Redirect to the Watch Later playlist if it's not already on it
+    const oldURL = tab.url;
+    if (
+      tab.url.includes("youtube.com") &&
+      !tab.url.includes("playlist?list=WL")
+    ) {
+      chrome.tabs.update(tabId, {
+        url: "https://www.youtube.com/playlist?list=WL",
+      });
+    } else {
+      // If already on the Watch Later playlist, run the scraping function
+      chrome.scripting.executeScript(
+        {
+          target: { tabId },
+          func: scrapeWatchLaterVideos,
+        },
+        (result) => {
+          if (chrome.runtime.lastError) {
+            console.error("Error executing script:", chrome.runtime.lastError);
+            return;
+          }
 
-// // Remove distractions only on youtube links
-// chrome.action.onClicked.addListener(async (tab) => {
-//   if (tab.url.startsWith(youtube)) {
-//     await chrome.scripting.insertCSS({
-//       files: ["focus-mode.css"],
-//       target: { tabId: tab.id },
-//     });
-//   }
-// });
+          // Check the result and scrape videos
+          const videos = (result && result[0] && result[0].result) || [];
+          console.log(videos);
 
-// Authenticate the user and get their OAuth token
-// async function getAuthToken() {
-//   return new Promise((resolve, reject) => {
-//     chrome.identity.getAuthToken({ interactive: true }, (token) => {
-//       if (chrome.runtime.lastError || !token) {
-//         reject(chrome.runtime.lastError || new Error("Token fetch failed"));
-//         return;
-//       }
-//       resolve(token);
-//     });
-//   });
-// }
+          // Send scraped data (Watch Later videos) to content.js
+          chrome.tabs.sendMessage(tabId, {
+            action: "displayWatchLaterVideos",
+            videos,
+          });
+        }
+      );
+    }
+    chrome.tabs.update(tabId, {
+      url: oldURL,
+    });
+  }
+});
 
-// Fetch videos from the Watch Later playlist
-// async function fetchWatchLaterVideos() {
-//   try {
-//     const token = await getAuthToken();
-
-//     // Test the token
-//     console.log("OAuth Token:", token);
-
-//     const response = await fetch(
-//       "https://www.googleapis.com/youtube/v3/playlists?part=snippet&mine=true&maxResults=25",
-//       {
-//         headers: { Authorization: `Bearer ${token}` },
-//       }
-//     );
-
-//     const data = await response.json();
-
-//     // Log full response for debugging
-//     console.log("API Response:", data);
-
-//     if (data.error) {
-//       console.error("YouTube API Error:", data.error);
-//       return [];
-//     }
-
-//     return data.items || [];
-//   } catch (error) {
-//     console.error("Failed to fetch Watch Later videos:", error);
-//     return [];
-//   }
-// }
-
+// Function to scrape Watch Later videos from the DOM
 function scrapeWatchLaterVideos() {
   const videos = [];
 
-  // Select the list of video elements in the Watch Later playlist
+  // Select video elements from the Watch Later playlist (may need to adjust selectors)
   const videoElements = document.querySelectorAll(
     "ytd-playlist-video-renderer"
   );
@@ -81,16 +66,6 @@ function scrapeWatchLaterVideos() {
       });
     }
   });
-
-  console.log(videos);
+  console.log("VIDS", videos);
   return videos;
 }
-
-// Listen for content script requests
-chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
-  if (message.action === "fetchWatchLaterVideos") {
-    const videos = await fetchWatchLaterVideos();
-    sendResponse({ videos });
-  }
-  return true;
-});

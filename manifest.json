@@ -1,19 +1,11 @@
 {
   "manifest_version": 3,
   "name": "Focus Mode",
-  "description": "Enable focus mode on youtube",
+  "description": "Enable focus mode on youtube and display only videos in watch later",
   "version": "1.0",
-  "icons": {
-    "16": "images/icon-16.png"
-  },
+  "permissions": ["tabs", "scripting", "activeTab", "storage"],
   "background": {
     "service_worker": "background.js"
-  },
-  "permissions": ["scripting", "activeTab", "identity"],
-  "host_permissions": ["https://www.youtube.com/*"],
-  "oauth2": {
-    "client_id": "",
-    "scopes": ["https://www.googleapis.com/auth/youtube.readonly"]
   },
   "content_scripts": [
     {
@@ -21,5 +13,6 @@
       "css": ["focus-mode.css"],
       "js": ["content.js"]
     }
-  ]
+  ],
+  "host_permissions": ["https://www.youtube.com/*"]
 }
