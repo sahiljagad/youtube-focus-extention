@@ -1,33 +1,25 @@
-// Listen for messages from background.js containing the Watch Later videos
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message.action === "displayWatchLaterVideos") {
-    const { videos } = message;
+(function () {
+    function scrapeVideos() {
+        let videos = [];
+        document.querySelectorAll("a#video-title").forEach(anchor => {
+            videos.push({
+                title: anchor.innerText.trim(),
+                url: anchor.href
+            });
+        });
 
-    // Get the homepage feed element
-    const homeFeed = document.querySelector("#contents");
-    console.log(homeFeed);
-    if (homeFeed) {
-      homeFeed.innerHTML = ""; // Clear current homepage content
-
-      // Create a container to display Watch Later videos
-      const watchLaterContainer = document.createElement("div");
-      watchLaterContainer.innerHTML = "<h2>Your Watch Later Videos</h2>";
-
-      // Loop through the Watch Later videos and display them
-      videos.forEach((video) => {
-        const videoElement = document.createElement("div");
-        videoElement.classList.add("video");
-        videoElement.innerHTML = `
-            <a href="${video.url}" target="_blank">
-              <img src="${video.thumbnailUrl}" alt="${video.title}" style="width: 120px; height: 90px;">
-              <p>${video.title}</p>
-            </a>
-          `;
-        watchLaterContainer.appendChild(videoElement);
-      });
-
-      // Append the new content to the homepage feed
-      homeFeed.appendChild(watchLaterContainer);
+        console.log("Scraped videos:", videos);
+        
+        // Store the data in local storage or send it to a background script
+        chrome.storage.local.set({ watchLaterVideos: videos }, () => {
+            console.log("Videos saved to local storage.");
+        });
     }
-  }
-});
+
+    // Run scraping after DOM loads
+    if (document.readyState === "complete" || document.readyState === "interactive") {
+        scrapeVideos();
+    } else {
+        window.addEventListener("load", scrapeVideos);
+    }
+})();

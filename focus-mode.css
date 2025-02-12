@@ -42,10 +42,10 @@ ytd-watch-next-secondary-results-renderer {
   display: flex !important;
   justify-content: center !important;
   align-items: center !important;
-  padding-right: 3%; /* Add spacing from the right */
+  padding-right: 15%; /* Add spacing from the right */
 }
 
 /* Make the main content area take a reasonable width */
 #primary {
-  width: 80%;
+  width: 100%;
 }

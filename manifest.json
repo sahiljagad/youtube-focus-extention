@@ -3,16 +3,29 @@
   "name": "Focus Mode",
   "description": "Enable focus mode on youtube and display only videos in watch later",
   "version": "1.0",
-  "permissions": ["tabs", "scripting", "activeTab", "storage"],
+  "icons": {
+    "16": "images/icon-16.png",
+    "32": "images/icon-32.png",
+    "48": "images/icon-48.png",
+    "128": "images/icon-128.png"
+  },
   "background": {
     "service_worker": "background.js"
   },
+  "action": {
+    "default_icon": {
+      "16": "images/icon-16.png",
+      "32": "images/icon-32.png",
+      "48": "images/icon-48.png",
+      "128": "images/icon-128.png"
+    }
+  },
+  "permissions": ["scripting", "activeTab", "storage", "cookies"],
+  "host_permissions": ["https://www.youtube.com/*"],
   "content_scripts": [
     {
-      "matches": ["https://www.youtube.com/*"],
-      "css": ["focus-mode.css"],
+      "matches": ["https://www.youtube.com/playlist?list=WL"],
       "js": ["content.js"]
     }
-  ],
-  "host_permissions": ["https://www.youtube.com/*"]
+  ]
 }

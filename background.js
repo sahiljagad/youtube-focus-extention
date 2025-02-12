@@ -1,59 +1,37 @@
 chrome.runtime.onInstalled.addListener(() => {
-  console.log("YouTube Watch Later Scraper Extension Installed");
+  chrome.action.setBadgeText({
+    text: "OFF",
+  });
 });
 
-// Listen for the page load event when the user visits YouTube
-chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-  console.log(tabId, changeInfo, tab.url);
-  if (
-    changeInfo.status === "complete" &&
-    tab.active &&
-    tab.url.includes("youtube")
-  ) {
-    console.log("Starting to execute script");
-    chrome.scripting.executeScript(
-      {
-        target: { tabId },
-        func: scrapeWatchLaterVideos,
-      },
-      (result) => {
-        console.log(result);
-        // Send scraped data (Watch Later videos) to content.js
-        const videos = result.length > 0 ? result[0].result : [];
-        chrome.tabs.sendMessage(tabId, {
-          action: "displayWatchLaterVideos",
-          videos,
-        });
-      }
-    );
-  }
-});
+const yt = "https://www.youtube.com/";
 
-// Function to scrape Watch Later videos from the DOM
-function scrapeWatchLaterVideos() {
-  const videos = [];
+// When the user clicks on the extension action
+chrome.action.onClicked.addListener(async (tab) => {
+  if (tab.url.startsWith(yt)) {
+    // We retrieve the action badge to check if the extension is 'ON' or 'OFF'
+    const prevState = await chrome.action.getBadgeText({ tabId: tab.id });
+    // Next state will always be the opposite
+    const nextState = prevState === "ON" ? "OFF" : "ON";
 
-  // Select video elements from the Watch Later playlist (may need to adjust selectors)
-  const videoElements = document.querySelectorAll(
-    "ytd-playlist-video-renderer"
-  );
+    // Set the action badge to the next state
+    await chrome.action.setBadgeText({
+      tabId: tab.id,
+      text: nextState,
+    });
 
-  videoElements.forEach((videoElement) => {
-    const titleElement = videoElement.querySelector("#video-title");
-    const thumbnailElement = videoElement.querySelector("#img");
-    const videoId = videoElement.getAttribute("href")?.split("v=")[1]; // Get video ID from the link
-
-    if (titleElement && videoId) {
-      const title = titleElement.textContent.trim();
-      const thumbnailUrl = thumbnailElement ? thumbnailElement.src : "";
-
-      videos.push({
-        title,
-        videoId,
-        thumbnailUrl,
-        url: `https://www.youtube.com/watch?v=${videoId}`,
+    if (nextState === "ON") {
+      // Insert the CSS file when the user turns the extension on
+      await chrome.scripting.insertCSS({
+        files: ["focus-mode.css"],
+        target: { tabId: tab.id },
+      });
+    } else if (nextState === "OFF") {
+      // Remove the CSS file when the user turns the extension off
+      await chrome.scripting.removeCSS({
+        files: ["focus-mode.css"],
+        target: { tabId: tab.id },
       });
     }
-  });
-  return videos;
-}
+  }
+});
