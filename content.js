@@ -1,8 +1,8 @@
-console.log("✅ Content script loaded!");
+console.log("Content.js loaded!");
 
 // Function to scrape Watch Later videos
 async function scrapeWatchLaterVideos() {
-    console.log("📌 Scraping Watch Later videos...");
+    console.log("Scraping Watch Later videos");
 
     // Wait for video elements to load
     let videoLinks = await new Promise(resolve => {
@@ -16,25 +16,22 @@ async function scrapeWatchLaterVideos() {
     });
 
     let videos = Array.from(videoLinks).map(anchor => ({
-        title: anchor.innerText.trim(),
+        title: anchor.title,
         url: anchor.href
     }));
 
-    console.log("✅ Scraped videos:", videos);
-
     // Store videos in Chrome storage
     chrome.storage.local.set({ watchLaterVideos: videos }, () => {
-        console.log("📌 Watch Later videos saved to storage.");
+        console.log("Watch Later videos saved to storage.");
     });
 }
 
 // Function to inject Watch Later videos into YouTube homepage
 function injectVideosIntoHomepage(videos) {
-    console.log("📌 Injecting Watch Later videos into homepage...");
 
     let homepage = document.querySelector("#content"); // YouTube's main content section
     if (!homepage) {
-        console.warn("⚠️ YouTube homepage structure not found.");
+        console.warn("YouTube homepage not found.");
         return;
     }
 
@@ -43,6 +40,7 @@ function injectVideosIntoHomepage(videos) {
     let existingSection = document.getElementById("custom-watch-later");
     if (existingSection) existingSection.remove();
 
+    // Remove exisiting video grid
     homepage.innerHTML = "";
 
     // Create a new container for Watch Later videos
@@ -52,7 +50,7 @@ function injectVideosIntoHomepage(videos) {
     watchLaterSection.style.background = "#181818"; // Match YouTube's dark theme
     watchLaterSection.style.borderRadius = "10px";
     watchLaterSection.style.margin = "20px 0";
-    watchLaterSection.innerHTML = `<h2 style="color: white;">Your Watch Later</h2>`;
+    watchLaterSection.innerHTML = `<h1 style="color: white;">Your Watch Later</h1><br>`;
 
     // Create a video grid
     let videoGrid = document.createElement("div");
@@ -99,7 +97,7 @@ if (window.location.pathname === "/playlist") {
         if (data.watchLaterVideos && data.watchLaterVideos.length > 0) {
             injectVideosIntoHomepage(data.watchLaterVideos);
         } else {
-            console.log("⚠️ No Watch Later videos found in storage.");
+            console.log("No Watch Later videos found in storage.");
         }
     });
 }
