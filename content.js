@@ -26,6 +26,23 @@ async function scrapeWatchLaterVideos() {
     });
 }
 
+// Function to remove suggested videos and Shorts
+function removeSuggestedVideosAndShorts() {
+    let observer = new MutationObserver(() => {
+        let relatedVideos = document.querySelector("#related");
+        if (relatedVideos) {
+            relatedVideos.remove();
+            console.log("Suggested videos removed.");
+        }
+
+        let shorts = document.querySelectorAll('ytd-reel-shelf-renderer');
+        shorts.forEach(short => short.remove());
+        if (shorts.length > 0) console.log("Shorts removed.");
+    });
+
+    observer.observe(document, { childList: true, subtree: true });
+}
+
 // Function to inject Watch Later videos into YouTube homepage
 function injectVideosIntoHomepage(videos) {
 
@@ -100,4 +117,9 @@ if (window.location.pathname === "/playlist") {
             console.log("No Watch Later videos found in storage.");
         }
     });
+}
+
+// Run the function only on video pages
+if (window.location.pathname.startsWith("/watch")) {
+    removeSuggestedVideosAndShorts();
 }
