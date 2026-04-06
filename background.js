@@ -1,6 +1,6 @@
-// Background service worker for YouTube Watch Later Enhancer
+// Background service worker for FocusTube
 
-console.log("YouTube Watch Later Enhancer: Background script loaded");
+console.log("FocusTube: Background script loaded");
 
 // Listen for messages from content script
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {

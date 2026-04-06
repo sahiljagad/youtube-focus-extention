@@ -1,4 +1,4 @@
-console.log("YouTube Watch Later Enhancer: Content script loaded");
+console.log("FocusTube: Content script loaded");
 
 // Configuration
 const CONFIG = {
