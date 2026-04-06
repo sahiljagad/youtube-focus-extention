@@ -50,6 +50,8 @@ function extractInnertubeConfig(html) {
     const apiKeyMatch = html.match(/"INNERTUBE_API_KEY":"([^"]+)"/);
     const clientVersionMatch = html.match(/"INNERTUBE_CLIENT_VERSION":"([^"]+)"/);
     const visitorDataMatch = html.match(/"visitorData":"([^"]+)"/);
+    const sessionIndexMatch = html.match(/"SESSION_INDEX":"(\d+)"/);
+    const delegatedSessionIdMatch = html.match(/"DELEGATED_SESSION_ID":"([^"]+)"/);
 
     if (!apiKeyMatch) return null;
 
@@ -57,7 +59,28 @@ function extractInnertubeConfig(html) {
         apiKey: apiKeyMatch[1],
         clientVersion: clientVersionMatch ? clientVersionMatch[1] : "2.20240101.00.00",
         visitorData: visitorDataMatch ? visitorDataMatch[1] : null,
+        sessionIndex: sessionIndexMatch ? sessionIndexMatch[1] : "0",
+        delegatedSessionId: delegatedSessionIdMatch ? delegatedSessionIdMatch[1] : null,
     };
+}
+
+// Generate SAPISIDHASH authorization header (same algorithm YouTube uses)
+async function generateSapisidHash(origin) {
+    const cookies = document.cookie.split("; ");
+    let sapisid = null;
+    for (const cookie of cookies) {
+        if (cookie.startsWith("SAPISID=") || cookie.startsWith("__Secure-3PAPISID=")) {
+            sapisid = cookie.split("=").slice(1).join("=");
+            if (cookie.startsWith("SAPISID=")) break; // prefer SAPISID
+        }
+    }
+    if (!sapisid) return null;
+
+    const timestamp = Math.floor(Date.now() / 1000);
+    const input = `${timestamp} ${sapisid} ${origin}`;
+    const hashBuffer = await crypto.subtle.digest("SHA-1", new TextEncoder().encode(input));
+    const hashHex = Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, "0")).join("");
+    return `SAPISIDHASH ${timestamp}_${hashHex}`;
 }
 
 // Extract ytInitialData JSON from YouTube page HTML
@@ -203,6 +226,20 @@ async function fetchWatchLaterVideos() {
     while (continuationToken && pageCount < CONFIG.MAX_PAGINATION_REQUESTS) {
         pageCount++;
 
+        const origin = "https://www.youtube.com";
+        const authHeader = await generateSapisidHash(origin);
+
+        const headers = {
+            "Content-Type": "application/json",
+            "X-Origin": origin,
+            "X-Youtube-Client-Name": "1",
+            "X-Youtube-Client-Version": config.clientVersion,
+            "X-Goog-AuthUser": config.sessionIndex,
+        };
+        if (authHeader) {
+            headers["Authorization"] = authHeader;
+        }
+
         const clientContext = {
             clientName: "WEB",
             clientVersion: config.clientVersion,
@@ -216,7 +253,7 @@ async function fetchWatchLaterVideos() {
             {
                 method: "POST",
                 credentials: "include",
-                headers: { "Content-Type": "application/json" },
+                headers,
                 body: JSON.stringify({
                     context: { client: clientContext },
                     continuation: continuationToken,
@@ -230,7 +267,10 @@ async function fetchWatchLaterVideos() {
         }
 
         const browseData = await browseResponse.json();
-        console.log("Browse response keys:", Object.keys(browseData));
+        console.log("Browse response keys:", JSON.stringify(Object.keys(browseData)));
+        if (!browseData.onResponseReceivedActions && !browseData.continuationContents) {
+            console.log("Browse response sample:", JSON.stringify(browseData).substring(0, 500));
+        }
         const page = extractContinuationItems(browseData);
         allVideos.push(...page.items);
         continuationToken = page.continuationToken;
